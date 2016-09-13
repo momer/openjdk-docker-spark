@@ -1,3 +1,9 @@
 *.tsv
-*.csv
 *.py
+**/target/
+data/
+tmpdata/
+*.swp
+projects/
+hdfs-site.xml
+checkpoints/

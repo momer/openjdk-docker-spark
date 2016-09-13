@@ -1,51 +1,99 @@
-master:
-  image: gettyimages/spark
-  command: bin/spark-class org.apache.spark.deploy.master.Master -h master
-  hostname: master
-  environment:
-    MASTER: spark://master:7077
-    SPARK_CONF_DIR: /conf
-    SPARK_PUBLIC_DNS: localhost
-  expose:
-    - 7001
-    - 7002
-    - 7003
-    - 7004
-    - 7005
-    - 7006
-    - 7077
-    - 6066
-  ports:
-    - 4040:4040
-    - 6066:6066
-    - 7077:7077
-    - 8080:8080
-  volumes:
-    - ./conf/master:/conf
-    - ./data:/tmp/data
+version: '2'
+services:
+  master:
+    build: .
+    command: bin/spark-class org.apache.spark.deploy.master.Master -h master
+    # depends_on:
+    #   - sparkpostgres
+    hostname: master
+    environment:
+      MASTER: spark://master:7077
+      SPARK_CONF_DIR: /conf
+      SPARK_PUBLIC_DNS: localhost
+    expose:
+      - 10000
+      - 7001
+      - 7002
+      - 7003
+      - 7004
+      - 7005
+      - 7006
+      - 7077
+      - 6066
+    # links:
+    #   - sparkpostgres
+    extra_hosts:
+      - "parent-host:$DOCKERHOSTIP"
+    ports:
+      - 10000:10000
+      - 4040:4040
+      - 6066:6066
+      - 7077:7077
+      - 8085:8080
+    volumes:
+      - ./conf/master:/conf
+      - ./tmpdata:/tmp/data
+      - ./projects:/projects
+    volumes_from:
+      - datadir
 
-worker:
-  image: gettyimages/spark
-  command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
-  hostname: worker
-  environment:
-    SPARK_CONF_DIR: /conf
-    SPARK_WORKER_CORES: 2
-    SPARK_WORKER_MEMORY: 1g
-    SPARK_WORKER_PORT: 8881
-    SPARK_WORKER_WEBUI_PORT: 8081
-    SPARK_PUBLIC_DNS: localhost
-  links:
-    - master
-  expose:
-    - 7012
-    - 7013
-    - 7014
-    - 7015
-    - 7016
-    - 8881
-  ports:
-    - 8081:8081
-  volumes:
-    - ./conf/worker:/conf
-    - ./data:/tmp/data
+  datadir:
+    image: busybox:latest
+    volumes:
+      - ./data:/opt/data:ro
+      - ./checkpoints:/opt/checkpoints
+
+  worker:
+    # image: gettyimages/spark
+    build: .
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
+    # depends_on:
+    #   - sparkpostgres
+    hostname: worker
+    environment:
+      SPARK_CONF_DIR: /conf
+      SPARK_WORKER_CORES: 1
+      SPARK_WORKER_MEMORY: 1g
+      SPARK_WORKER_PORT: 8881
+      SPARK_WORKER_WEBUI_PORT: 8081
+      SPARK_PUBLIC_DNS: localhost
+    links:
+      - master
+        # - sparkpostgres
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 7016
+      - 8881
+    extra_hosts:
+      - "parent-host:$DOCKERHOSTIP"
+    ports:
+      - 8086:8081
+    volumes:
+      - ./conf/worker:/conf
+      - ./tmpdata:/tmp/data
+      - ./projects:/projects
+    volumes_from:
+      - datadir
+  # PostgreSQL database
+  # sparkpostgresdatacontainer:
+  #   image: busybox:latest
+  #   volumes:
+  #     - /opt/docker/spark/sparkpostgres/var/lib/postgresql/data:/var/lib/postgresql/data
+  #     - /opt/docker/spark/sparkpostgres/var/log/postgresql:/var/log/postgresql
+  #     - /opt/docker/spark/sparkpostgres/dump:/dump
+  #     - /opt/docker/spark/sparkpostgres/etc/postgresql:/etc/postgresql
+  # sparkpostgres:
+  #   image: postgres:9.5
+  #   container_name: sparkpostgres
+  #   environment:
+  #     - POSTGRES_USER=spark_user
+  #     - POSTGRES_PASSWORD=spark_password
+  #     - POSTGRES_DB=spark_db
+  #   ports:
+  #     - "41325:5432"
+  #   restart: always
+  #   volumes_from:
+  #     - sparkpostgresdatacontainer

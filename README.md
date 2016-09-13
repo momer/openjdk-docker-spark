@@ -1,3 +1,8 @@
+# notes from mo
+
+We still build off Debian, but use openjdk-7-jdk now. Additionally, what needs configuring is a DFS for 
+
+Fork of gettyimages/spark
 
 # spark
 
