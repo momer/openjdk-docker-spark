@@ -42,6 +42,8 @@ services:
     build: .
     command: bin/spark-class org.apache.spark.deploy.worker.Worker -c 2 spark://master:7077
     hostname: worker
+    depends_on:
+      - master
     environment:
       SPARK_CONF_DIR: /conf
       SPARK_WORKER_CORES: 2
