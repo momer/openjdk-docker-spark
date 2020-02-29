@@ -63,7 +63,7 @@ RUN $SPARK_HOME/build/mvn \
   -Phive-thriftserver \
   -Pyarn \
   -DskipTests \
-  -Pscala-2.12 \
+  -Pscala-2.11 \
   clean \
   package
 
